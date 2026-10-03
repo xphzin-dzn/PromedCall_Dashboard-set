@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Promedcall — Relatório de Performance Social</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --teal:#179592; --teal-dark:#0E6E6B; --mint:#F4FAF9; --white:#FFFFFF;
+  --ink:#1A1A1A; --ink-soft:#5C6864; --line:rgba(23,149,146,.16);
+  --shadow:0 24px 48px rgba(23,149,146,.06);
+  --margin:clamp(20px,6vw,120px);
+  --bg:var(--white); --card:var(--mint); --text:var(--ink); --text-soft:var(--ink-soft);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#0E1413; --card:#152220; --text:#F2F6F5; --text-soft:#8FA3A0; --line:rgba(23,149,146,.28); --shadow:0 24px 48px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{ --bg:#0E1413; --card:#152220; --text:#F2F6F5; --text-soft:#8FA3A0; --line:rgba(23,149,146,.28); --shadow:0 24px 48px rgba(0,0,0,.35); }
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Roboto',sans-serif;font-weight:300;line-height:1.4;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.display{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.01em;margin:0;color:var(--text);}
+a{color:var(--teal);}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--margin);}
+.hairline{border:none;border-top:1px solid var(--line);margin:0;}
+
+/* masthead */
+.masthead{padding:48px 0 32px;}
+.eyebrow{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;font-weight:500;}
+.masthead h1{font-size:clamp(32px,5vw,56px);text-transform:uppercase;line-height:1.02;max-width:14ch;}
+.masthead .sub{color:var(--text-soft);font-size:16px;max-width:46ch;margin-top:16px;font-weight:300;}
+.period{display:flex;gap:28px;flex-wrap:wrap;margin-top:28px;font-size:13px;color:var(--text-soft);}
+.period b{color:var(--text);font-weight:500;}
+
+/* hero grid */
+.hero-grid{display:grid;grid-template-columns:minmax(220px,1fr) 1.6fr;gap:20px;padding:32px 0 40px;}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr;}}
+.hero-card{background:var(--teal);color:#fff;border-radius:18px;padding:36px 30px;aspect-ratio:4/5;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow);}
+.hero-card .label{font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:.14em;opacity:.85;}
+.hero-card .num{font-family:'Oswald';font-size:clamp(48px,7vw,88px);font-weight:700;line-height:.95;margin:18px 0;}
+.hero-card .note{font-size:13px;opacity:.88;font-weight:300;max-width:26ch;}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:560px){.kpi-grid{grid-template-columns:1fr;}}
+.kpi{background:var(--card);border-radius:16px;padding:24px 24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;}
+.kpi .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft);font-family:'Oswald';font-weight:500;}
+.kpi .num{font-family:'Oswald';font-size:clamp(26px,3vw,34px);font-weight:600;}
+.kpi .delta{font-size:12.5px;color:var(--text-soft);}
+.icon{width:20px;height:20px;stroke:var(--teal);fill:none;stroke-width:1.5;flex-shrink:0;}
+
+/* sections */
+.section{padding:44px 0;}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:20px;margin-bottom:26px;flex-wrap:wrap;}
+.section-head h2{font-size:clamp(20px,2.4vw,26px);text-transform:uppercase;}
+.section-head .idx{font-family:'Oswald';color:var(--teal);font-size:13px;letter-spacing:.1em;}
+.section-desc{color:var(--text-soft);font-size:14px;max-width:60ch;margin-top:6px;}
+
+.chart-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+.chart-card{background:var(--card);border-radius:16px;padding:26px 24px 14px;box-shadow:var(--shadow);}
+.chart-card h3{font-size:14px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.chart-card .cdesc{font-size:12.5px;color:var(--text-soft);margin-bottom:16px;}
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap.tall{height:320px;}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+
+/* insights */
+.insights{display:grid;gap:14px;}
+.insight{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:18px 0;border-top:1px solid var(--line);align-items:start;}
+.insight:last-child{border-bottom:1px solid var(--line);}
+.insight .n{font-family:'Oswald';color:var(--teal);font-size:20px;font-weight:600;}
+.insight p{margin:0;font-size:14.5px;color:var(--text);}
+.insight p b{font-weight:500;color:var(--teal-dark);}
+:root[data-theme="dark"] .insight p b, @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .insight p b{color:#5FD1CD;} }
+
+/* posts */
+.filters{display:flex;gap:8px;margin-bottom:22px;}
+.filter-btn{font-family:'Roboto';font-size:13px;padding:8px 16px;border-radius:20px;border:1px solid var(--line);background:transparent;color:var(--text-soft);cursor:pointer;transition:.15s;}
+.filter-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+.posts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;}
+.post-card{background:var(--card);border-radius:16px;padding:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;}
+.post-top{display:flex;justify-content:space-between;align-items:center;}
+.tag{font-family:'Oswald';font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:20px;background:rgba(23,149,146,.12);color:var(--teal-dark);}
+:root[data-theme="dark"] .tag{color:#5FD1CD;}
+.post-date{font-size:12px;color:var(--text-soft);}
+.post-desc{font-size:13.5px;color:var(--text);line-height:1.45;min-height:38px;}
+.post-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12px;color:var(--text-soft);border-top:1px solid var(--line);padding-top:12px;}
+.post-metrics b{display:block;font-family:'Oswald';font-size:15px;font-weight:600;color:var(--text);}
+.post-link{font-size:12.5px;margin-top:2px;}
+.badge-best{position:absolute;}
+
+footer{padding:40px 0 60px;color:var(--text-soft);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow">Relatório de Mídias Sociais</div>
+    <h1>Performance no Instagram</h1>
+    <p class="sub">Análise completa dos conteúdos publicados pela Promedcall — visualizações, alcance, engajamento e o que funcionou melhor no período.</p>
+    <div class="period">
+      <div>Conta <b>@promed.call</b></div>
+      <div>Período <b>01 — 30 de setembro, 2026</b></div>
+      <div><b id="n-posts">14</b> publicações analisadas</div>
+    </div>
+  </div>
+
+  <hr class="hairline">
+
+  <div class="hero-grid">
+    <div class="hero-card">
+      <div class="label">Alcance Total</div>
+      <div class="num" id="hero-reach">20.727</div>
+      <div class="note">Contas únicas alcançadas nas 14 publicações do mês, somando reels e carrosséis.</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Visualizações</span><svg class="icon" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div class="num" id="k-views">30.675</div>
+        <div class="delta">2.191 em média por post</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Engajamento</span><svg class="icon" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+        <div class="num" id="k-eng">1.026</div>
+        <div class="delta">curtidas + comentários + salvos + compart.</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Novos Seguidores</span><svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+        <div class="num" id="k-follows">65</div>
+        <div class="delta">100% vindos de Reels</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Taxa de Engaj.</span><svg class="icon" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></div>
+        <div class="num" id="k-er">4,95%</div>
+        <div class="delta">engajamento sobre alcance</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="hairline">
+
+  <div class="section">
+    <div class="section-head">
+      <div><h2>Evolução no Período</h2><p class="section-desc">Visualizações e alcance de cada publicação, em ordem cronológica.</p></div>
+      <div class="idx">01</div>
+    </div>
+    <div class="chart-card">
+      <h3>Visualizações × Alcance por publicação</h3>
+      <p class="cdesc">Cada ponto representa uma publicação, ordenada pela data de veiculação.</p>
+      <div class="chart-wrap tall"><canvas id="chartTimeline"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div><h2>Reels × Carrossel</h2><p class="section-desc">Reels concentram a esmagadora maioria do resultado — veja a diferença lado a lado.</p></div>
+      <div class="idx">02</div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Alcance médio e taxa de engajamento por formato</h3>
+        <p class="cdesc">Barras: alcance médio por post (eixo esq.) · Linha: taxa de engajamento sobre alcance (eixo dir.)</p>
+        <div class="chart-wrap"><canvas id="chartType"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Fatia de engajamento total</h3>
+        <p class="cdesc">Distribuição das interações (curtidas, comentários, salvos, compartilh.)</p>
+        <div class="chart-wrap"><canvas id="chartShare"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div><h2>Melhores Dias para Publicar</h2><p class="section-desc">Alcance médio por dia da semana, considerando as publicações do período.</p></div>
+      <div class="idx">03</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-wrap"><canvas id="chartWeekday"></canvas></div>
+    </div>
+  </div>
+
+  <hr class="hairline">
+
+  <div class="section">
+    <div class="section-head">
+      <div><h2>Leitura dos Dados</h2><p class="section-desc">Principais achados desta análise.</p></div>
+      <div class="idx">04</div>
+    </div>
+    <div class="insights">
+      <div class="insight"><div class="n">1</div><p>O reel <b>“O coração de quem torce pelo Leão do Parque”</b> (06/09) foi o post de maior alcance do mês — 3.538 contas atingidas — mas o reel <b>“Nunca diga em voz alta que o plantão tá tranquilo”</b> (25/09) liderou em interações, com 233 engajamentos e 58 compartilhamentos.</p></div>
+      <div class="insight"><div class="n">2</div><p>O reel de <b>depoimento de paciente</b> (21/09, Dona Valdeci) segue com a <b>maior taxa de engajamento do mês: 9,55%</b> sobre o alcance, de perto seguido pelo quadro Tudo Menos Medicina de 19/09 (9,16%) — conteúdo pessoal e prova social convertem mais que qualquer outro formato.</p></div>
+      <div class="insight"><div class="n">3</div><p>Os <b>5 carrosséis do mês somaram apenas 40 interações no total</b> (0 comentários, 0 salvamentos, 0 novos seguidores em todos eles), contra 986 dos reels — o formato carrossel segue funcionando como alcance passivo, não como gerador de engajamento.</p></div>
+      <div class="insight"><div class="n">4</div><p>Reels de <b>até 30 segundos</b> tiveram alcance médio de ~2.900 visualizações, quase o dobro dos reels acima de 60 segundos (~1.690) — vídeos curtos e diretos seguem performando melhor com essa audiência.</p></div>
+      <div class="insight"><div class="n">5</div><p><b>Terça-feira</b> teve o melhor alcance médio entre os dias com mais de uma publicação (3.052 views), seguida por quarta e sábado; <b>segunda-feira</b> foi o dia mais fraco do mês (768 views em média, 3 publicações).</p></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div><h2>Todas as Publicações</h2><p class="section-desc">Detalhamento post a post — filtre por formato.</p></div>
+      <div class="idx">05</div>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" data-f="all">Todos (14)</button>
+      <button class="filter-btn" data-f="IG reel">Reels (9)</button>
+      <button class="filter-btn" data-f="IG carousel">Carrossel (5)</button>
+    </div>
+    <div class="posts-grid" id="postsGrid"></div>
+  </div>
+
+  <footer>
+    <span>Relatório gerado a partir dos dados de performance do Instagram · @promed.call</span>
+    <span>01–25 set. 2026</span>
+  </footer>
+</div>
+
+<script>
+const posts = [
+{id:"18027475502889659",type:"IG reel",date:"01/09",weekday:"Ter",hour:13,duration:30,views:3590,reach:2093,likes:132,shares:8,follows:19,comments:20,saves:5,engagement:165,er:7.88,desc:"Chimarrão na mão, corrida na rotina e paixão pelo São Paulo — quadro Tudo Menos Medicina com Dr. Sandro.",link:"https://www.instagram.com/reel/Dcwj2rvBrgW/"},
+{id:"18086829629384987",type:"IG carousel",date:"03/09",weekday:"Qui",hour:8,duration:0,views:882,reach:473,likes:11,shares:1,follows:0,comments:0,saves:0,engagement:12,er:2.54,desc:"Emergência ou consulta de rotina? Guia para saber para onde ir quando o corpo dá sinais.",link:"https://www.instagram.com/p/Dc1FZmuDdbb/"},
+{id:"18379177294224252",type:"IG reel",date:"06/09",weekday:"Dom",hour:4,duration:17,views:4773,reach:3538,likes:174,shares:23,follows:11,comments:6,saves:1,engagement:204,er:5.77,desc:"O coração de quem torce pelo Leão do Parque bate em outro ritmo — check-up cardiológico antes do jogo.",link:"https://www.instagram.com/reel/Dc8bGbtFOwH/"},
+{id:"18128964496779069",type:"IG reel",date:"08/09",weekday:"Ter",hour:13,duration:67,views:2514,reach:2044,likes:46,shares:8,follows:2,comments:9,saves:0,engagement:63,er:3.08,desc:"Mitos x Verdades da Oftalmologia, com Dr. Eduardo — hábitos que afetam a saúde dos olhos.",link:"https://www.instagram.com/reel/DdCkVQCiWXw/"},
+{id:"18123869464890685",type:"IG carousel",date:"10/09",weekday:"Qui",hour:7,duration:0,views:839,reach:542,likes:6,shares:1,follows:0,comments:0,saves:0,engagement:7,er:1.29,desc:"Sinais de que a visão mudou: vista cansada, dor de cabeça e o valor do check-up oftalmológico.",link:"https://www.instagram.com/p/DdHAGT1G4el/"},
+{id:"18176717887429097",type:"IG reel",date:"12/09",weekday:"Sáb",hour:7,duration:27,views:2460,reach:1806,likes:59,shares:4,follows:2,comments:3,saves:1,engagement:67,er:3.71,desc:"Até o Leão do Parque já garantiu o seu Cartão Promedcall — condições exclusivas para a família.",link:"https://www.instagram.com/reel/DdMO_jDEUXZ/"},
+{id:"17998914035809331",type:"IG reel",date:"14/09",weekday:"Seg",hour:13,duration:138,views:873,reach:520,likes:27,shares:4,follows:0,comments:1,saves:0,engagement:32,er:6.15,desc:"Mitos x Verdades da Odontologia, com Dr. Guilherme — escova dura e pasta com carvão ativado.",link:"https://www.instagram.com/reel/DdSCWSEjSKa/"},
+{id:"17973393921128686",type:"IG carousel",date:"18/09",weekday:"Sex",hour:6,duration:0,views:387,reach:145,likes:4,shares:0,follows:0,comments:0,saves:0,engagement:4,er:2.76,desc:"Erros diários que podem estar danificando seus dentes — hábitos de escovação a evitar.",link:"https://www.instagram.com/p/Ddbj5GlEUU-/"},
+{id:"18130745389680438",type:"IG reel",date:"19/09",weekday:"Sáb",hour:13,duration:35,views:3113,reach:1693,likes:127,shares:6,follows:15,comments:20,saves:2,engagement:155,er:9.16,desc:"Quindim, sertanejo e futebol — conheça o Dr. Sérgio no quadro Tudo Menos Medicina.",link:"https://www.instagram.com/reel/Dde6s1nCe6l/"},
+{id:"18155286619513485",type:"IG reel",date:"21/09",weekday:"Seg",hour:15,duration:52,views:616,reach:356,likes:26,shares:0,follows:0,comments:7,saves:1,engagement:34,er:9.55,desc:"“Eles tratam a gente como ser humano” — depoimento da paciente Dona Valdeci Isquierdo.",link:"https://www.instagram.com/reel/DdkRgi3ARLL/"},
+{id:"17946640746324536",type:"IG carousel",date:"23/09",weekday:"Qua",hour:17,duration:0,views:2020,reach:1422,likes:7,shares:2,follows:0,comments:0,saves:0,engagement:9,er:0.63,desc:"Guia rápido de qual especialista procurar para cada tipo de queixa — carrossel completo.",link:"https://www.instagram.com/p/DdpnEwelnjT/"},
+{id:"18103568828205174",type:"IG reel",date:"25/09",weekday:"Sex",hour:8,duration:44,views:4079,reach:2627,likes:151,shares:58,follows:16,comments:23,saves:1,engagement:233,er:8.87,desc:"Nunca diga em voz alta que o plantão tá tranquilo — bate-bola com o Dr. Pedro Felisardo.",link:"https://www.instagram.com/reel/Ddtu75DjNCT/"},
+{id:"18018556565733209",type:"IG reel",date:"28/09",weekday:"Seg",hour:9,duration:20,views:816,reach:535,likes:27,shares:5,follows:0,comments:1,saves:0,engagement:33,er:6.17,desc:"Se até o Leão do Parque encarou a agulha sem medo, você também pode colocar seus exames em dia.",link:"https://www.instagram.com/reel/Dd1l3VYJ_tD/"},
+{id:"17986353491880106",type:"IG carousel",date:"30/09",weekday:"Qua",hour:7,duration:0,views:3713,reach:2933,likes:5,shares:3,follows:0,comments:0,saves:0,engagement:8,er:0.27,desc:"Pequenos incômodos na sua rotina podem ser o seu organismo pedindo uma revisão geral.",link:"https://www.instagram.com/p/Dd6mOljFcUe/"},
+];
+
+const teal = "#179592", tealSoft = "rgba(23,149,146,.28)", ink = getComputedStyle(document.documentElement).getPropertyValue('--text-soft') || '#5C6864';
+Chart.defaults.font.family = "'Roboto', sans-serif";
+Chart.defaults.color = '#5C6864';
+Chart.defaults.font.size = 12;
+
+new Chart(document.getElementById('chartTimeline'), {
+  type:'line',
+  data:{ labels: posts.map(p=>p.date),
+    datasets:[
+      {label:'Visualizações', data:posts.map(p=>p.views), borderColor:teal, backgroundColor:'rgba(23,149,146,.10)', fill:true, tension:.35, pointRadius:4, pointBackgroundColor:teal, borderWidth:2},
+      {label:'Alcance', data:posts.map(p=>p.reach), borderColor:'#8FA3A0', borderDash:[4,3], fill:false, tension:.35, pointRadius:3, pointBackgroundColor:'#8FA3A0', borderWidth:1.5}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',align:'start',labels:{boxWidth:10,boxHeight:10,usePointStyle:true}}},
+    scales:{x:{grid:{display:false}}, y:{grid:{color:'rgba(23,149,146,.08)'},beginAtZero:true}}}
+});
+
+const typeAgg = {'IG reel':{n:0,reach:0,eng:0},'IG carousel':{n:0,reach:0,eng:0}};
+posts.forEach(p=>{typeAgg[p.type].n++;typeAgg[p.type].reach+=p.reach;typeAgg[p.type].eng+=p.engagement;});
+const avgReach = [typeAgg['IG reel'].reach/typeAgg['IG reel'].n, typeAgg['IG carousel'].reach/typeAgg['IG carousel'].n];
+const erType = [typeAgg['IG reel'].eng/typeAgg['IG reel'].reach*100, typeAgg['IG carousel'].eng/typeAgg['IG carousel'].reach*100];
+
+new Chart(document.getElementById('chartType'), {
+  data:{labels:['Reels','Carrossel'],
+    datasets:[
+      {type:'bar',label:'Alcance médio',data:avgReach,backgroundColor:'rgba(23,149,146,.75)',borderRadius:6,yAxisID:'y',barPercentage:.5},
+      {type:'line',label:'Tx. engajamento (%)',data:erType,borderColor:'#1A1A1A',backgroundColor:'#1A1A1A',yAxisID:'y1',tension:0,pointRadius:5,borderWidth:2}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',align:'start',labels:{boxWidth:10,boxHeight:10,usePointStyle:true}}},
+    scales:{
+      x:{grid:{display:false}},
+      y:{position:'left',grid:{color:'rgba(23,149,146,.08)'},title:{display:true,text:'Alcance médio'}},
+      y1:{position:'right',grid:{display:false},title:{display:true,text:'Engaj. %'}}
+    }}
+});
+
+new Chart(document.getElementById('chartShare'), {
+  type:'doughnut',
+  data:{labels:['Reels','Carrossel'],datasets:[{data:[typeAgg['IG reel'].eng,typeAgg['IG carousel'].eng],backgroundColor:['#179592','#C9E4E2'],borderWidth:0}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,usePointStyle:true}}}}
+});
+
+const wdOrder = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+const wdAgg = {}; wdOrder.forEach(d=>wdAgg[d]={n:0,views:0});
+posts.forEach(p=>{wdAgg[p.weekday].n++;wdAgg[p.weekday].views+=p.views;});
+new Chart(document.getElementById('chartWeekday'), {
+  type:'bar',
+  data:{labels:wdOrder, datasets:[{label:'Visualizações médias',data:wdOrder.map(d=>wdAgg[d].n?Math.round(wdAgg[d].views/wdAgg[d].n):0),backgroundColor:wdOrder.map(d=>wdAgg[d].n?'rgba(23,149,146,.75)':'rgba(23,149,146,.15)'),borderRadius:6,maxBarThickness:46}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(23,149,146,.08)'},beginAtZero:true}}}
+});
+
+function fmt(n){return n.toLocaleString('pt-BR');}
+function renderPosts(filter){
+  const grid = document.getElementById('postsGrid'); grid.innerHTML='';
+  posts.filter(p=>filter==='all'||p.type===filter).forEach(p=>{
+    const el = document.createElement('div'); el.className='post-card';
+    el.innerHTML = `
+      <div class="post-top"><span class="tag">${p.type==='IG reel'?'Reel':'Carrossel'}</span><span class="post-date">${p.date}</span></div>
+      <div class="post-desc">${p.desc}</div>
+      <div class="post-metrics">
+        <div>Views<b>${fmt(p.views)}</b></div>
+        <div>Alcance<b>${fmt(p.reach)}</b></div>
+        <div>Engaj.<b>${fmt(p.engagement)}</b></div>
+        <div>Curtidas<b>${fmt(p.likes)}</b></div>
+        <div>Coment.<b>${fmt(p.comments)}</b></div>
+        <div>Tx. Eng.<b>${p.er.toFixed(1)}%</b></div>
+      </div>
+      <a class="post-link" href="${p.link}" target="_blank" rel="noopener">Ver publicação →</a>`;
+    grid.appendChild(el);
+  });
+}
+renderPosts('all');
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPosts(btn.dataset.f);
+  });
+});
+</script>
+</body>
+</html>
